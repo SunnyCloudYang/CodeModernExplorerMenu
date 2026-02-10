@@ -10,12 +10,6 @@ code_clsid_map = {
   'arm64': '12483301-B459-40BE-A434-DF8010E8958F'
 }
 
-code_insiders_clsid_map = {
-  'x86': 'B9949795-B37D-457F-ADDE-6A950EF85CA7',
-  'x64': '799F4F7E-5934-4001-A74C-E207F44F05B8',
-  'arm64': '7D34756D-32DD-4EE6-B99F-2691C0DAD875'
-}
-
 root = os.path.dirname(os.path.dirname(__file__))
 out_dir = os.path.join(root, 'out')
 pkg_type = sys.argv[1]
@@ -31,26 +25,18 @@ manifest = os.path.join(root, 'template', 'AppxManifest.xml')
 with open(manifest, 'r') as f:
   content = f.read()
   content = content.replace('@@PublisherDisplayName@@', 'Cursor Modern Explorer Menu')
-  if pkg_type == 'stable':
-    content = content.replace('@@Publisher@@', 'Cursor.Modern.Explorer.Menu')
-    content = content.replace('@@PackageDescription@@', 'Cursor Modern Explorer Menu')
-    content = content.replace('@@PackageName@@', 'Cursor.Modern.Explorer.Menu')
-    content = content.replace('@@PackageDisplayName@@', 'Cursor Modern Explorer Menu')
-    content = content.replace('@@Application@@', 'Cursor.exe')
-    content = content.replace('@@ApplicationIdShort@@', 'Cursor')
-    content = content.replace('@@MenuID@@', 'OpenWithCursor')
-    content = content.replace('@@CLSID@@', code_clsid_map[arch])
-    content = content.replace('@@PackageDLL@@', 'Cursor Modern Explorer Menu.dll')
-  if pkg_type == 'insiders':
-    content = content.replace('@@Publisher@@', 'Cursor.Insiders.Modern.Explorer.Menu')
-    content = content.replace('@@PackageDescription@@', 'Cursor Insiders Modern Explorer Menu')
-    content = content.replace('@@PackageName@@', 'Cursor.Insiders.Modern.Explorer.Menu')
-    content = content.replace('@@PackageDisplayName@@', 'Cursor Insiders Modern Explorer Menu')
-    content = content.replace('@@Application@@', 'Cursor - Insiders.exe')
-    content = content.replace('@@ApplicationIdShort@@', 'CursorInsiders')
-    content = content.replace('@@MenuID@@', 'OpenWithCursorInsiders')
-    content = content.replace('@@CLSID@@', code_insiders_clsid_map[arch])
-    content = content.replace('@@PackageDLL@@', 'Cursor Insiders Modern Explorer Menu.dll')
+  if pkg_type != 'stable':
+    print("Only 'stable' package type is supported now.", file=sys.stderr)
+    sys.exit(1)
+  content = content.replace('@@Publisher@@', 'Cursor.Modern.Explorer.Menu')
+  content = content.replace('@@PackageDescription@@', 'Cursor Modern Explorer Menu')
+  content = content.replace('@@PackageName@@', 'Cursor.Modern.Explorer.Menu')
+  content = content.replace('@@PackageDisplayName@@', 'Cursor Modern Explorer Menu')
+  content = content.replace('@@Application@@', 'Cursor.exe')
+  content = content.replace('@@ApplicationIdShort@@', 'Cursor')
+  content = content.replace('@@MenuID@@', 'OpenWithCursor')
+  content = content.replace('@@CLSID@@', code_clsid_map[arch])
+  content = content.replace('@@PackageDLL@@', 'Cursor Modern Explorer Menu.dll')
 
 # Copy AppxManifest file to the package directory.
 manifest_output = os.path.join(pkg_dir, 'AppxManifest.xml')

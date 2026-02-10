@@ -76,31 +76,5 @@
         ],
       }],
     ],
-  }, {
-    'target_name': 'Cursor Insiders Modern Explorer Menu',
-    'type': 'shared_library',
-    'defines': [
-      'EXE_NAME="Cursor - Insiders.exe"',
-      'DIR_NAME="cursor"',
-      'INSIDER=1',
-    ],
-    'conditions': [
-      [ 'OS=="win"', {
-        'conditions': [
-          ['target_arch=="x64"', {
-            'TargetMachine' : 17,             # /MACHINE:X64
-            'defines': [ 
-              'DLL_UUID="799F4F7E-5934-4001-A74C-E207F44F05B8"',
-            ],
-          }],
-          ['target_arch=="arm64"', {
-            'TargetMachine' : 18,             # /MACHINE:ARM64
-            'defines': [ 
-              'DLL_UUID="7D34756D-32DD-4EE6-B99F-2691C0DAD875"',
-            ],
-          }],
-        ],
-      }],
-    ],
   }],
 }

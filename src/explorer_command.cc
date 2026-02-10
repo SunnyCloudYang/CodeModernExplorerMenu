@@ -108,6 +108,52 @@ namespace {
     fclose(f);
   }
 
+  // Try to resolve the Cursor executable path.
+  // Order:
+  //  1. Location relative to this module (installed with the extension)
+  //  2. %ProgramFiles%\DIR_NAME\EXE_NAME
+  //  3. Search EXE_NAME on the current PATH
+  bool ResolveCursorPath(std::filesystem::path& resolvedPath) {
+    // 1. Try relative to this module.
+    std::filesystem::path module_path{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+    module_path = module_path.remove_filename().parent_path().parent_path();
+    module_path = module_path / DIR_NAME / EXE_NAME;
+
+    if (std::filesystem::exists(module_path)) {
+      resolvedPath = module_path;
+      return true;
+    }
+
+    // 2. Try under Program Files.
+    PWSTR ProgramFilesPath = nullptr;
+    HRESULT hr = SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &ProgramFilesPath);
+    if (SUCCEEDED(hr) && ProgramFilesPath) {
+      std::filesystem::path fallback_path = std::filesystem::path(ProgramFilesPath) / DIR_NAME / EXE_NAME;
+      CoTaskMemFree(ProgramFilesPath);
+      if (std::filesystem::exists(fallback_path)) {
+        resolvedPath = fallback_path;
+        return true;
+      }
+    } else {
+      if (ProgramFilesPath) {
+        CoTaskMemFree(ProgramFilesPath);
+      }
+    }
+
+    // 3. Finally, try to find the executable on PATH.
+    wchar_t buffer[MAX_PATH] = {};
+    DWORD len = SearchPathW(nullptr, EXE_NAME, nullptr, MAX_PATH, buffer, nullptr);
+    if (len > 0 && len < MAX_PATH) {
+      std::filesystem::path path_on_env{ buffer };
+      if (std::filesystem::exists(path_on_env)) {
+        resolvedPath = path_on_env;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
 }
 
 class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitRoOriginateError>, IExplorerCommand> {
@@ -118,11 +164,7 @@ class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeCl
     wchar_t value_w[kMaxStringLength];
     wchar_t expanded_value_w[kMaxStringLength];
     DWORD value_size_w = sizeof(value_w);
-    #if defined(INSIDER)
-        const wchar_t kTitleRegkey[] = L"Software\\Classes\\CursorInsidersModernExplorerMenu";
-    #else
-        const wchar_t kTitleRegkey[] = L"Software\\Classes\\CursorModernExplorerMenu";
-    #endif
+    const wchar_t kTitleRegkey[] = L"Software\\Classes\\CursorModernExplorerMenu";
     HKEY subhkey = nullptr;
     LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, kTitleRegkey, 0, KEY_READ, &subhkey);
     if (result != ERROR_SUCCESS) {
@@ -140,25 +182,9 @@ class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeCl
   }
 
   IFACEMETHODIMP GetIcon(IShellItemArray* items, PWSTR* icon) {
-    std::filesystem::path module_path{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
-    module_path = module_path.remove_filename().parent_path().parent_path();
-    module_path = module_path / DIR_NAME / EXE_NAME;
-
-    if (!std::filesystem::exists(module_path)) {
-        PWSTR ProgramFilesPath = nullptr;
-        HRESULT hr = SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &ProgramFilesPath);
-        if (SUCCEEDED(hr) && ProgramFilesPath) {
-            std::filesystem::path fallback_path = std::filesystem::path(ProgramFilesPath) / DIR_NAME / EXE_NAME;
-            CoTaskMemFree(ProgramFilesPath);
-            if (std::filesystem::exists(fallback_path)) {
-                module_path = fallback_path;
-            } else {
-                return E_FAIL;
-            }
-        } else {
-            if (ProgramFilesPath) CoTaskMemFree(ProgramFilesPath);
-            return E_FAIL;
-        }
+    std::filesystem::path module_path;
+    if (!ResolveCursorPath(module_path)) {
+      return E_FAIL;
     }
 
     return SHStrDupW(module_path.c_str(), icon);
@@ -191,27 +217,10 @@ class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeCl
 
   IFACEMETHODIMP Invoke(IShellItemArray* items, IBindCtx* bindCtx) {
       if (items) {
-          std::filesystem::path module_path{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
-          module_path = module_path.remove_filename().parent_path().parent_path();
-          module_path = module_path / DIR_NAME / EXE_NAME;
-
-          if (!std::filesystem::exists(module_path)) {
-            PWSTR ProgramFilesPath = nullptr;
-            HRESULT hr = SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &ProgramFilesPath);
-            if (SUCCEEDED(hr) && ProgramFilesPath) {
-                std::filesystem::path fallback_path = std::filesystem::path(ProgramFilesPath) / DIR_NAME / EXE_NAME;
-                CoTaskMemFree(ProgramFilesPath);
-                if (std::filesystem::exists(fallback_path)) {
-                    module_path = fallback_path;
-                } else {
-                    DebugLog(module_path.wstring(), false, 0, 0, L"(fallback also missing)");
-                    return E_FAIL;
-                }
-            } else {
-                if (ProgramFilesPath) CoTaskMemFree(ProgramFilesPath);
-                DebugLog(module_path.wstring(), false, 0, 0, L"(primary missing)");
-                return E_FAIL;
-            }
+          std::filesystem::path module_path;
+          if (!ResolveCursorPath(module_path)) {
+              DebugLog(module_path.wstring(), false, 0, 0, L"(all resolution attempts failed)");
+              return E_FAIL;
           }
 
           DWORD count;

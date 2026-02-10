@@ -8,20 +8,16 @@ $ScriptRoot = if ( $PSScriptRoot ) { $PSScriptRoot } else { ($(try { $script:psE
 
 $ProductName = 'Cursor Modern Explorer Menu'
 $PackageName = $ProductName -replace '\s+', '.'
-$RegKeyPath = 'HKCU\SOFTWARE\Classes\' + $ProductName -replace '\s+'
+$RegKeyPath = 'HKCU\SOFTWARE\Classes\' + ($ProductName -replace '\s+')
 
-if ($ScriptRoot -match 'Insiders') {
-    $ProductName = 'Cursor Modern Explorer Menu'
-    $PackageName = $ProductName -replace '\s+', '.'
-    $RegKeyPath = 'HKCU\SOFTWARE\Classes\' + $ProductName -replace '\s+'
-}
-
-# Process both cases at once
+# Remove shell extension registration for both registry views
 REG DELETE "$RegKeyPath" /reg:64 /f
 REG DELETE "$RegKeyPath" /reg:32 /f
 
 Get-AppxPackage -Name $PackageName | Remove-AppxPackage 
 
-if ($ScriptRoot -eq "$Env:LOCALAPPDATA\Programs\$ProductName") {
-    Remove-Item -Path "$Env:LOCALAPPDATA\Programs\$ProductName" -Recurse -Force
+# Clean up the external install directory created on install
+$InstallRoot = Join-Path $Env:LOCALAPPDATA "Programs\$ProductName"
+if (Test-Path $InstallRoot) {
+    Remove-Item -Path $InstallRoot -Recurse -Force
 }

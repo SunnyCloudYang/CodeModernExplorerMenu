@@ -13,12 +13,6 @@ if (Test-Path $OutputDirectory) {
 $ProductId = 'a434e5cf-1a39-49a1-b956-362c95aa85df'
 $UpgradeCode = '6b06a391-688d-4b09-961c-9a655292bc05'
 
-if ($Variant -eq 'insiders') {
-    $ProductName = 'Cursor Insiders Modern Explorer Menu'
-    $ProductId = 'd634ca99-9829-44e2-a4bb-48f9e726fa3b'
-    $UpgradeCode = '41d8bac9-bea2-457b-ac00-8c296b1d8e1b'
-}
-
 $CustomAction = @(
     New-InstallerCustomAction -FileId 'RunOnInstall' -RunOnInstall
     New-InstallerCustomAction -FileId 'RunOnUninstall' -RunOnUninstall

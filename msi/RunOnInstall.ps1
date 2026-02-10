@@ -8,12 +8,17 @@ $ScriptRoot = if ( $PSScriptRoot ) { $PSScriptRoot } else { ($(try { $script:psE
 
 $ProductName = 'Cursor Modern Explorer Menu'
 $ProductPath = "$Env:LOCALAPPDATA\Programs\$ProductName"
-$MenuName = "Open with Cursor"
 
-if ($ScriptRoot -match 'Insiders') {
-    $ProductName = 'Cursor Modern Explorer Menu'
-    $ProductPath = "$Env:LOCALAPPDATA\Programs\$ProductName"
-    $MenuName = "Open with Cursor"
+# Localize menu name based on system UI language
+$MenuName = "Open with Cursor" # English default
+$culture = [System.Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName
+switch ($culture) {
+    'zh' { $MenuName = "使用 Cursor 打开" }
+    'fr' { $MenuName = "Ouvrir avec Cursor" }
+    'es' { $MenuName = "Abrir con Cursor" }
+    'ar' { $MenuName = "فتح باستخدام Cursor" }
+    'ru' { $MenuName = "Открыть с помощью Cursor" }
+    default { } # keep English
 }
 
 if (-not (Test-Path $ProductPath)) {
