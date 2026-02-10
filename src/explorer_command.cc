@@ -142,7 +142,8 @@ namespace {
 
     // 3. Finally, try to find the executable on PATH.
     wchar_t buffer[MAX_PATH] = {};
-    DWORD len = SearchPathW(nullptr, EXE_NAME, nullptr, MAX_PATH, buffer, nullptr);
+    // Use the stable Cursor executable name when searching PATH.
+    DWORD len = SearchPathW(nullptr, L"Cursor.exe", nullptr, MAX_PATH, buffer, nullptr);
     if (len > 0 && len < MAX_PATH) {
       std::filesystem::path path_on_env{ buffer };
       if (std::filesystem::exists(path_on_env)) {
