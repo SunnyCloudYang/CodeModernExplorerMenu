@@ -6,12 +6,12 @@ if (-not ([Security.Principal.WindowsPrincipal]::new([Security.Principal.Windows
 
 $ScriptRoot = if ( $PSScriptRoot ) { $PSScriptRoot } else { ($(try { $script:psEditor.GetEditorContext().CurrentFile.Path } catch {}), $script:MyInvocation.MyCommand.Path, $script:PSCommandPath, $(try { $script:psISE.CurrentFile.Fullpath.ToString() } catch {}) | % { if ($_ ) { $_.ToLower() } } | Split-Path -EA 0 | Get-Unique ) | Get-Unique }
 
-$ProductName = 'Code Modern Explorer Menu'
+$ProductName = 'Cursor Modern Explorer Menu'
 $PackageName = $ProductName -replace '\s+', '.'
 $RegKeyPath = 'HKCU\SOFTWARE\Classes\' + $ProductName -replace '\s+'
 
 if ($ScriptRoot -match 'Insiders') {
-    $ProductName = 'Code Insiders Modern Explorer Menu'
+    $ProductName = 'Cursor Modern Explorer Menu'
     $PackageName = $ProductName -replace '\s+', '.'
     $RegKeyPath = 'HKCU\SOFTWARE\Classes\' + $ProductName -replace '\s+'
 }

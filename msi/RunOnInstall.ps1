@@ -6,14 +6,14 @@ if (-not ([Security.Principal.WindowsPrincipal]::new([Security.Principal.Windows
 
 $ScriptRoot = if ( $PSScriptRoot ) { $PSScriptRoot } else { ($(try { $script:psEditor.GetEditorContext().CurrentFile.Path } catch {}), $script:MyInvocation.MyCommand.Path, $script:PSCommandPath, $(try { $script:psISE.CurrentFile.Fullpath.ToString() } catch {}) | % { if ($_ ) { $_.ToLower() } } | Split-Path -EA 0 | Get-Unique ) | Get-Unique }
 
-$ProductName = 'Code Modern Explorer Menu'
+$ProductName = 'Cursor Modern Explorer Menu'
 $ProductPath = "$Env:LOCALAPPDATA\Programs\$ProductName"
-$MenuName = "Open with Code"
+$MenuName = "Open with Cursor"
 
 if ($ScriptRoot -match 'Insiders') {
-    $ProductName = 'Code Insiders Modern Explorer Menu'
+    $ProductName = 'Cursor Modern Explorer Menu'
     $ProductPath = "$Env:LOCALAPPDATA\Programs\$ProductName"
-    $MenuName = "Open with Code Insiders"
+    $MenuName = "Open with Cursor"
 }
 
 if (-not (Test-Path $ProductPath)) {

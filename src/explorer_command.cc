@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#include <knownfolders.h>
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -101,9 +102,9 @@ class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeCl
     wchar_t expanded_value_w[kMaxStringLength];
     DWORD value_size_w = sizeof(value_w);
     #if defined(INSIDER)
-        const wchar_t kTitleRegkey[] = L"Software\\Classes\\CodeInsidersModernExplorerMenu";
+        const wchar_t kTitleRegkey[] = L"Software\\Classes\\CursorInsidersModernExplorerMenu";
     #else
-        const wchar_t kTitleRegkey[] = L"Software\\Classes\\CodeModernExplorerMenu";
+        const wchar_t kTitleRegkey[] = L"Software\\Classes\\CursorModernExplorerMenu";
     #endif
     HKEY subhkey = nullptr;
     LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, kTitleRegkey, 0, KEY_READ, &subhkey);
@@ -123,30 +124,25 @@ class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeCl
 
   IFACEMETHODIMP GetIcon(IShellItemArray* items, PWSTR* icon) {
     std::filesystem::path module_path{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
-    module_path = module_path.remove_filename().parent_path().parent_path();
+    module_path = module_path.remove_filename().parent_path();
     module_path = module_path / DIR_NAME / EXE_NAME;
 
     if (!std::filesystem::exists(module_path)) {
-        std::filesystem::path fallback_path = std::filesystem::path("D:\\Programs") / DIR_NAME / EXE_NAME;
-        if (std::filesystem::exists(fallback_path)) {
-            module_path = fallback_path;
+        PWSTR ProgramFilesPath = nullptr;
+        HRESULT hr = SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &ProgramFilesPath);
+        if (SUCCEEDED(hr) && ProgramFilesPath) {
+            std::filesystem::path fallback_path = std::filesystem::path(ProgramFilesPath) / DIR_NAME / EXE_NAME;
+            CoTaskMemFree(ProgramFilesPath);
+            if (std::filesystem::exists(fallback_path)) {
+                module_path = fallback_path;
+            } else {
+                return E_FAIL;
+            }
         } else {
+            if (ProgramFilesPath) CoTaskMemFree(ProgramFilesPath);
             return E_FAIL;
         }
     }
-    
-    // doesn't work, had to use hardcoded "Program Files" path
-    // if (!std::filesystem::exists(module_path)) {
-    //   PWSTR ProgramFilesPath = nullptr;
-    //   HRESULT hr = SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &ProgramFilesPath);
-    //   std::filesystem::path fallback_path = std::filesystem::path(ProgramFilesPath) / DIR_NAME / EXE_NAME;
-    //   CoTaskMemFree(ProgramFilesPath);
-    //   if (std::filesystem::exists(fallback_path)) {
-    //     module_path = fallback_path;
-    //   } else {
-    //     return E_FAIL;
-    //   }
-    // }
 
     return SHStrDupW(module_path.c_str(), icon);
   }
@@ -179,30 +175,25 @@ class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeCl
   IFACEMETHODIMP Invoke(IShellItemArray* items, IBindCtx* bindCtx) {
       if (items) {
           std::filesystem::path module_path{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
-          module_path = module_path.remove_filename().parent_path().parent_path();
+          module_path = module_path.remove_filename().parent_path();
           module_path = module_path / DIR_NAME / EXE_NAME;
 
           if (!std::filesystem::exists(module_path)) {
-            std::filesystem::path fallback_path = std::filesystem::path("D:\\Programs") / DIR_NAME / EXE_NAME;
-            if (std::filesystem::exists(fallback_path)) {
-                module_path = fallback_path;
+            PWSTR ProgramFilesPath = nullptr;
+            HRESULT hr = SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &ProgramFilesPath);
+            if (SUCCEEDED(hr) && ProgramFilesPath) {
+                std::filesystem::path fallback_path = std::filesystem::path(ProgramFilesPath) / DIR_NAME / EXE_NAME;
+                CoTaskMemFree(ProgramFilesPath);
+                if (std::filesystem::exists(fallback_path)) {
+                    module_path = fallback_path;
+                } else {
+                    return E_FAIL;
+                }
             } else {
+                if (ProgramFilesPath) CoTaskMemFree(ProgramFilesPath);
                 return E_FAIL;
             }
           }
-
-          // doesn't work, had to use hardcoded "Program Files" path
-          // if (!std::filesystem::exists(module_path)) {
-          //   PWSTR ProgramFilesPath = nullptr;
-          //   HRESULT hr = SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, NULL, &ProgramFilesPath);
-          //   std::filesystem::path fallback_path = std::filesystem::path(ProgramFilesPath) / DIR_NAME / EXE_NAME;
-          //   CoTaskMemFree(ProgramFilesPath);
-          //   if (std::filesystem::exists(fallback_path)) {
-          //     module_path = fallback_path;
-          //   } else {
-          //     return E_FAIL;
-          //   }
-          // }
 
           DWORD count;
           RETURN_IF_FAILED(items->GetCount(&count));

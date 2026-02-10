@@ -52,11 +52,11 @@
     ],
   },
   'targets': [{
-    'target_name': 'Code Modern Explorer Menu',
+    'target_name': 'Cursor Modern Explorer Menu',
     'type': 'shared_library',
     'defines': [
-      'EXE_NAME="Code.exe"',
-      'DIR_NAME="Microsoft VS Code"',
+      'EXE_NAME="Cursor.exe"',
+      'DIR_NAME="cursor"',
     ],
     'conditions': [
       [ 'OS=="win"', {
@@ -77,11 +77,11 @@
       }],
     ],
   }, {
-    'target_name': 'Code Insiders Modern Explorer Menu',
+    'target_name': 'Cursor Modern Explorer Menu',
     'type': 'shared_library',
     'defines': [
-      'EXE_NAME="Code - Insiders.exe"',
-      'DIR_NAME="Microsoft VS Code Insiders"',
+      'EXE_NAME="Cursors.exe"',
+      'DIR_NAME="Cursor"',
       'INSIDER=1',
     ],
     'conditions': [

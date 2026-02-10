@@ -34,8 +34,8 @@ jobs:
         - x64
         #- arm64
         Product: [
-          { ProductName: Code Modern Explorer Menu, Variant: stable },
-          { ProductName: Code Insiders Modern Explorer Menu, Variant: insiders }
+          { ProductName: Cursor Modern Explorer Menu, Variant: stable },
+          { ProductName: Cursor Insiders Modern Explorer Menu, Variant: insiders }
         ]
         
     steps:
