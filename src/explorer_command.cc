@@ -91,6 +91,23 @@ namespace {
   return out;
 }
 
+  void DebugLog(const std::wstring& cursorPath, bool pathExists, INT_PTR shellExecuteResult, DWORD lastError, const std::wstring& targetPath) {
+    wchar_t tempPath[MAX_PATH] = {};
+    if (GetTempPathW(MAX_PATH, tempPath) == 0) return;
+    std::wstring logPath = std::filesystem::path(tempPath) / L"CursorExplorerMenu_debug.log";
+    FILE* f = _wfopen(logPath.c_str(), L"a");
+    if (!f) return;
+    SYSTEMTIME st = {};
+    GetLocalTime(&st);
+    fwprintf(f, L"[%04u-%02u-%02u %02u:%02u:%02u] Cursor path: %s\n", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, cursorPath.c_str());
+    fwprintf(f, L"  Path exists: %s\n", pathExists ? L"yes" : L"no");
+    fwprintf(f, L"  Target (folder/file): %s\n", targetPath.c_str());
+    fwprintf(f, L"  ShellExecute return: %lld (<=32 = error)\n", (long long)shellExecuteResult);
+    if (shellExecuteResult <= 32)
+      fwprintf(f, L"  GetLastError: %lu\n", lastError);
+    fclose(f);
+  }
+
 }
 
 class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitRoOriginateError>, IExplorerCommand> {
@@ -187,10 +204,12 @@ class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeCl
                 if (std::filesystem::exists(fallback_path)) {
                     module_path = fallback_path;
                 } else {
+                    DebugLog(module_path.wstring(), false, 0, 0, L"(fallback also missing)");
                     return E_FAIL;
                 }
             } else {
                 if (ProgramFilesPath) CoTaskMemFree(ProgramFilesPath);
+                DebugLog(module_path.wstring(), false, 0, 0, L"(primary missing)");
                 return E_FAIL;
             }
           }
@@ -204,8 +223,10 @@ class __declspec(uuid(DLL_UUID)) ExplorerCommandHandler final : public RuntimeCl
                   wil::unique_cotaskmem_string path;
                   result = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
                   if (SUCCEEDED(result)) {
-                      HINSTANCE ret = ShellExecuteW(nullptr, L"open", module_path.c_str(), QuoteForCommandLineArg(path.get()).c_str(), nullptr, SW_SHOW);
-                      if ((INT_PTR)ret <= HINSTANCE_ERROR) {
+                      INT_PTR ret = (INT_PTR)ShellExecuteW(nullptr, L"open", module_path.c_str(), QuoteForCommandLineArg(path.get()).c_str(), nullptr, SW_SHOW);
+                      DWORD err = GetLastError();
+                      DebugLog(module_path.wstring(), true, ret, err, path.get() ? std::wstring(path.get()) : std::wstring());
+                      if (ret <= HINSTANCE_ERROR) {
                           RETURN_LAST_ERROR();
                       }
                   }
