@@ -77,11 +77,11 @@
       }],
     ],
   }, {
-    'target_name': 'Cursor Modern Explorer Menu',
+    'target_name': 'Cursor Insiders Modern Explorer Menu',
     'type': 'shared_library',
     'defines': [
-      'EXE_NAME="Cursors.exe"',
-      'DIR_NAME="Cursor"',
+      'EXE_NAME="Cursor - Insiders.exe"',
+      'DIR_NAME="cursor"',
       'INSIDER=1',
     ],
     'conditions': [
